@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gerador de Ofertas Mercado Livre</title>
+
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f5f7; padding: 20px; max-width: 600px; margin: 0 auto; }
+    .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    h2 { margin-top: 0; color: #333; }
+    label { font-weight: bold; display: block; margin-top: 12px; margin-bottom: 4px; font-size: 14px; }
+    input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+    button { width: 100%; background: #ffe600; border: none; padding: 12px; font-weight: bold; font-size: 16px; border-radius: 6px; margin-top: 16px; cursor: pointer; color: #2d3277; }
+    button:hover { background: #ebd300; }
+    textarea { width: 100%; height: 180px; margin-top: 16px; padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-family: monospace; box-sizing: border-box; }
+    .btn-copy { background: #25D366; color: white; margin-top: 8px; }
+    .btn-copy:hover { background: #1ebc57; }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h2>🚀 Gerador de Ofertas ML</h2>
+    
+    <label>Link do Produto / Oferta (ou meli.la):</label>
+    <input type="text" id="url" placeholder="https://www.mercadolivre.com.br/p/MLB...">
+
+    <label>Cupom de Desconto (Opcional):</label>
+    <input type="text" id="coupon" placeholder="Ex: DIADACRIANCA">
+
+    <button onclick="generateOffer()">Gerar Card WhatsApp</button>
+
+    <div id="result" style="display:none;">
+      <label>Resultado para WhatsApp:</label>
+      <textarea id="output" readonly></textarea>
+      <button class="btn-copy" onclick="copyCard()">📋 Copiar para o WhatsApp</button>
+    </div>
+  </div>
+
+  <script>
+    async function generateOffer() {
+      const url = document.getElementById('url').value;
+      const coupon = document.getElementById('coupon').value;
+      
+      if (!url) return alert('Cole o link do produto!');
+
+      const response = await fetch('/api/convert', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url, coupon })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        document.getElementById('output').value = data.data.formattedCard;
+        document.getElementById('result').style.display = 'block';
+      } else {
+        alert('Erro ao processar: ' + data.error);
+      }
+    }
+
+    function copyCard() {
+      const textarea = document.getElementById('output');
+      textarea.select();
+      document.execCommand('copy');
+      alert('Card copiado com sucesso!');
+    }
+  </script>
+</body>
+</html>
