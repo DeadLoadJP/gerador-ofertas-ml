@@ -13,9 +13,11 @@
     input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
     button { width: 100%; background: #ffe600; border: none; padding: 12px; font-weight: bold; font-size: 16px; border-radius: 6px; margin-top: 16px; cursor: pointer; color: #2d3277; }
     button:hover { background: #ebd300; }
-    textarea { width: 100%; height: 180px; margin-top: 16px; padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-family: monospace; box-sizing: border-box; }
+    button:disabled { background: #cccccc; cursor: not-allowed; color: #666666; }
+    textarea { width: 100%; height: 200px; margin-top: 16px; padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-family: monospace; box-sizing: border-box; }
     .btn-copy { background: #25D366; color: white; margin-top: 8px; }
     .btn-copy:hover { background: #1ebc57; }
+    .error-msg { color: #d93025; font-weight: bold; margin-top: 12px; display: none; }
   </style>
 </head>
 <body>
@@ -29,7 +31,9 @@
     <label>Cupom de Desconto (Opcional):</label>
     <input type="text" id="coupon" placeholder="Ex: DIADACRIANCA">
 
-    <button onclick="generateOffer()">Gerar Card WhatsApp</button>
+    <button id="btn-generate" onclick="generateOffer()">Gerar Card WhatsApp</button>
+    
+    <div id="error" class="error-msg"></div>
 
     <div id="result" style="display:none;">
       <label>Resultado para WhatsApp:</label>
@@ -40,24 +44,45 @@
 
   <script>
     async function generateOffer() {
-      const url = document.getElementById('url').value;
-      const coupon = document.getElementById('coupon').value;
+      const urlInput = document.getElementById('url').value.trim();
+      const couponInput = document.getElementById('coupon').value.trim();
+      const btn = document.getElementById('btn-generate');
+      const errorDiv = document.getElementById('error');
+      const resultDiv = document.getElementById('result');
       
-      if (!url) return alert('Cole o link do produto!');
+      errorDiv.style.display = 'none';
+      errorDiv.innerText = '';
 
-      const response = await fetch('/api/convert', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url, coupon })
-      });
+      if (!urlInput) {
+        alert('Por favor, cole o link do produto!');
+        return;
+      }
 
-      const data = await response.json();
+      btn.disabled = true;
+      btn.innerText = '⏳ Buscando informações no Mercado Livre...';
 
-      if (data.success) {
-        document.getElementById('output').value = data.data.formattedCard;
-        document.getElementById('result').style.display = 'block';
-      } else {
-        alert('Erro ao processar: ' + data.error);
+      try {
+        const response = await fetch('/api/convert', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: urlInput, coupon: couponInput })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          document.getElementById('output').value = data.data.formattedCard;
+          resultDiv.style.display = 'block';
+        } else {
+          errorDiv.innerText = '⚠️ Erro: ' + (data.error || 'Não foi possível extrair os dados.');
+          errorDiv.style.display = 'block';
+        }
+      } catch (err) {
+        errorDiv.innerText = '⚠️ Erro de conexão com a API: ' + err.message;
+        errorDiv.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Gerar Card WhatsApp';
       }
     }
 
